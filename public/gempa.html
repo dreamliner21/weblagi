@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informasi Gempa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Informasi Gempa</h1>
+    <button id="fetchEarthquake" class="bg-red-500 text-white p-2 rounded">Lihat Data Gempa</button>
+    <div id="result" class="bg-white p-4 rounded shadow mt-4 hidden">
+      <h2 id="date" class="text-xl font-bold"></h2>
+      <p id="region"></p>
+      <p id="magnitude"></p>
+      <p id="depth"></p>
+      <img id="image" class="mt-4" alt="Peta Gempa">
+    </div>
+  </div>
+  <script>
+    document.getElementById('fetchEarthquake').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('result');
+      try {
+        const response = await fetch('/api/earthquake');
+        const data = await response.json();
+        document.getElementById('date').textContent = `Tanggal: ${data.result.tanggal}`;
+        document.getElementById('region').textContent = `Wilayah: ${data.result.wilayah}`;
+        document.getElementById('magnitude').textContent = `Magnitudo: ${data.result.magnitude}`;
+        document.getElementById('depth').textContent = `Kedalaman: ${data.result.kedalaman}`;
+        document.getElementById('image').src = data.result.image;
+        resultDiv.classList.remove('hidden');
+      } catch (error) {
+        resultDiv.innerHTML = '<p>Gagal mengambil data gempa.</p>';
+      }
+    });
+  </script>
+</body>
+</html>

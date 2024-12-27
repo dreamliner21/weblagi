@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informasi Jarak</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Informasi Jarak</h1>
+    <form id="distanceForm" class="mb-4">
+      <input type="text" id="dari" placeholder="Dari" class="p-2 border rounded">
+      <input type="text" id="ke" placeholder="Ke" class="p-2 border rounded">
+      <button type="submit" class="bg-green-500 text-white p-2 rounded">Cari</button>
+    </form>
+    <div id="result" class="bg-white p-4 rounded shadow hidden">
+      <p id="desc"></p>
+      <img id="map" class="mt-4" alt="Peta">
+    </div>
+  </div>
+  <script>
+    document.getElementById('distanceForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); // Mencegah form untuk reload halaman
+      const dari = document.getElementById('dari').value; // Mendapatkan input dari
+      const ke = document.getElementById('ke').value; // Mendapatkan input ke
+      const resultDiv = document.getElementById('result'); // Div untuk menampilkan hasil
+  
+      try {
+        // Mengirimkan permintaan ke server
+        const response = await fetch(`/api/distance?dari=${dari}&ke=${ke}`);
+  
+        // Memeriksa jika respons API sukses
+        if (response.ok) {
+          const data = await response.json(); // Mengambil data dalam format JSON
+          console.log(data); // Menambahkan log untuk debugging
+  
+          if (data.status) {
+            // Memastikan data.url.data ada dan valid
+            if (data.url && data.url.data) {
+              // Menampilkan deskripsi (kosong jika tidak ada) dan gambar jika ada
+              document.getElementById('desc').textContent = data.url.desc || 'Deskripsi tidak tersedia';
+              document.getElementById('map').src = data.url.data; // Memasukkan URL gambar ke elemen img
+              resultDiv.classList.remove('hidden'); // Menampilkan div hasil
+            } else {
+              resultDiv.innerHTML = '<p>Gambar tidak tersedia.</p>';
+            }
+          } else {
+            resultDiv.innerHTML = '<p>Data tidak ditemukan.</p>';
+          }
+        } else {
+          resultDiv.innerHTML = '<p>Gagal mengambil data jarak.</p>';
+        }
+      } catch (error) {
+        // Menangani error saat request
+        resultDiv.innerHTML = `<p>Terjadi kesalahan: ${error.message}</p>`;
+      }
+    });
+  </script>
+  </body>
+</html>

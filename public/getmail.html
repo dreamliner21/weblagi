@@ -1,0 +1,81 @@
+<!-- getmail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Emails</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+  <div class="max-w-lg w-full bg-white p-6 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-center mb-4">Your Emails</h1>
+    <input id="email-input" type="text" class="w-full p-2 border rounded-lg mb-4" placeholder="Enter your temporary email">
+    <button id="getmail-btn" class="w-full py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Fetch Emails</button>
+    <div id="mail-list" class="mt-4"></div>
+    <button onclick="location.href='tempmail.html'" class="w-full py-2 px-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 mt-4">Back to Generate Email</button>
+  </div>
+
+  <script>
+    const getMailBtn = document.getElementById('getmail-btn');
+    const emailInput = document.getElementById('email-input');
+    const mailList = document.getElementById('mail-list');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedEmail = localStorage.getItem('tempEmail');
+      if (savedEmail) {
+        emailInput.value = savedEmail;
+      }
+    });
+
+    async function requestNotificationPermission() {
+      if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+    }
+
+    function showNotification(emailCount) {
+      if (Notification.permission === 'granted') {
+        new Notification('New Emails', {
+          body: `You have ${emailCount} new email(s).`,
+        });
+      }
+    }
+
+    getMailBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) {
+        mailList.innerHTML = '<p class="text-red-500">Please enter a valid email.</p>';
+        return;
+      }
+
+      mailList.innerHTML = '<p>Fetching emails...</p>';
+      try {
+        const response = await fetch(`/api/getmail?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+
+        if (data.status && data.result && data.result.email && data.result.email.length > 0) {
+          const emailCount = data.result.email.length;
+          showNotification(emailCount);
+
+          mailList.innerHTML = data.result.email.map(mail => `
+            <div class="p-4 border rounded-lg mb-4">
+              <p><strong>From:</strong> ${mail.from}</p>
+              <p><strong>Subject:</strong> ${mail.subject || 'No subject'}</p>
+              <p><strong>Date:</strong> ${mail.date}</p>
+              <p><strong>Content:</strong> ${mail.content}</p>
+            </div>
+          `).join('');
+        } else {
+          mailList.innerHTML = '<p class="text-center text-gray-500">No email yet, try again.</p>';
+        }
+      } catch (error) {
+        mailList.innerHTML = '<p class="text-red-500">An error occurred: ' + error.message + '</p>';
+      }
+    });
+
+    // Request notification permission on page load
+    requestNotificationPermission();
+  </script>
+</body>
+</html>

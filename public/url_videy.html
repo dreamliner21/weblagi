@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Video URLs to WhatsApp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="container mx-auto py-10">
+    <h1 class="text-4xl font-bold text-center mb-6 text-blue-600">Video URLs</h1>
+
+    <!-- Button untuk mendapatkan URL -->
+    <div id="fetch-btn-container" class="text-center mb-6">
+      <button id="fetch-btn" class="px-6 py-3 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition">
+        Get Video URLs
+      </button>
+    </div>
+
+    <!-- Tombol Reset (disembunyikan awalnya) -->
+    <div id="reset-btn-container" class="hidden text-center mb-6">
+      <button id="reset-btn" class="px-6 py-3 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 transition">
+        Reset
+      </button>
+    </div>
+
+    <!-- Form input nomor telepon (disembunyikan awalnya) -->
+    <div id="phone-input-container" class="hidden text-center mb-6">
+      <input id="phone-number" type="text" placeholder="Enter phone number, ex: 62" class="px-4 py-2 border rounded-lg w-64 text-center mb-4">
+      <button id="send-btn" class="px-6 py-3 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition">
+        Send to WhatsApp
+      </button>
+    </div>
+
+    <!-- Daftar URL -->
+    <ul id="url-list" class="space-y-4"></ul>
+  </div>
+
+  <script>
+    const fetchButton = document.getElementById('fetch-btn');
+    const sendButton = document.getElementById('send-btn');
+    const resetButton = document.getElementById('reset-btn');
+    const phoneInputContainer = document.getElementById('phone-input-container');
+    const resetButtonContainer = document.getElementById('reset-btn-container');
+    const fetchButtonContainer = document.getElementById('fetch-btn-container');
+    const urlList = document.getElementById('url-list');
+    const phoneNumberInput = document.getElementById('phone-number');
+    let startIndex = 0;
+
+    // Fungsi untuk mengambil URL dari server
+    async function fetchUrls() {
+      try {
+        const response = await fetch('/fetch-videos'); // Endpoint untuk mendapatkan JSON
+        const data = await response.json();
+        const videos = data.videos;
+
+        // Reset tampilan URL sebelum menambahkan URL baru
+        urlList.innerHTML = ''; // Hapus URL yang lama
+
+        // Ambil 10 URL berikutnya
+        const endIndex = Math.min(startIndex + 10, videos.length);
+        const urlsToDisplay = videos.slice(startIndex, endIndex);
+        startIndex = endIndex;
+
+        if (urlsToDisplay.length === 0) {
+          fetchButton.disabled = true;
+          fetchButton.textContent = "All URLs Loaded";
+          fetchButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+          
+          // Sembunyikan tombol Get URLs dan form input, tampilkan tombol Reset
+          fetchButtonContainer.classList.add('hidden');
+          phoneInputContainer.classList.add('hidden');
+          resetButtonContainer.classList.remove('hidden');
+          
+          return;
+        }
+
+        // Tambahkan URL ke daftar
+        urlsToDisplay.forEach(video => {
+          const listItem = document.createElement('li');
+          listItem.className = "bg-white p-4 shadow rounded-lg";
+
+          const urlLink = document.createElement('a');
+          urlLink.href = video.url;
+          urlLink.textContent = video.url;
+          urlLink.target = "_blank";
+          urlLink.className = "text-blue-500 hover:underline";
+
+          listItem.appendChild(urlLink);
+          urlList.appendChild(listItem);
+        });
+
+        // Tampilkan form input nomor telepon
+        phoneInputContainer.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error fetching URLs:', error);
+        Swal.fire('Error', 'Failed to fetch URLs. Please try again.', 'error');
+      }
+    }
+
+    // Fungsi untuk mengirim URL ke WhatsApp dalam satu bubble chat
+    async function sendUrlsToWhatsApp() {
+      const phoneNumber = phoneNumberInput.value;
+      const urlElements = document.querySelectorAll('#url-list a');
+      const urlsToSend = Array.from(urlElements).slice(0, 10).map(a => a.href);
+
+      if (!phoneNumber || urlsToSend.length === 0) {
+        Swal.fire('Error', 'Please provide a phone number and load URLs first.', 'error');
+        return;
+      }
+
+      const message = `Here are your video URLs:\n\n${urlsToSend.join('\n')}`;
+
+      const result = await Swal.fire({
+        title: 'Send URLs to WhatsApp?',
+        text: `Send the following message to ${phoneNumber}:\n\n${message}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, send it!',
+        cancelButtonText: 'Cancel',
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch('/send-url', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phoneNumber, message }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            Swal.fire('Success', 'Message sent to WhatsApp successfully!', 'success');
+          } else {
+            Swal.fire('Error', 'Failed to send message. Please try again.', 'error');
+          }
+        } catch (error) {
+          console.error('Error sending message:', error);
+          Swal.fire('Error', 'Failed to send message. Please try again.', 'error');
+        }
+      }
+    }
+
+    // Fungsi untuk mereset URL dan memulai ulang
+    function resetUrls() {
+      startIndex = 0;  // Reset index untuk mengambil URL
+      fetchButton.disabled = false;
+      fetchButton.textContent = "Get Video URLs";
+      fetchButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+      
+      // Tampilkan kembali tombol Get URLs dan sembunyikan tombol Reset
+      fetchButtonContainer.classList.remove('hidden');
+      resetButtonContainer.classList.add('hidden');
+      urlList.innerHTML = ''; // Hapus semua URL yang sudah dimuat
+      phoneInputContainer.classList.add('hidden'); // Sembunyikan input nomor telepon
+    }
+
+    fetchButton.addEventListener('click', fetchUrls);
+    sendButton.addEventListener('click', sendUrlsToWhatsApp);
+    resetButton.addEventListener('click', resetUrls);
+  </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+2024/12/27-23:07:46.459 5ac Reusing MANIFEST C:\Users\T480\Downloads\webblagi\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/12/27-23:07:46.459 5ac Recovering log #52
+2024/12/27-23:07:46.462 5ac Reusing old log C:\Users\T480\Downloads\webblagi\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000052.log 
+2024/12/27-23:07:48.350 21c0 Manual compaction at level-0 from '\x00!\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00"\x00\x00\x00' @ 0 : 0; will stop at (end)
